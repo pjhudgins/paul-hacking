@@ -1,0 +1,72 @@
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QGridLayout
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from PyQt5.QtMultimediaWidgets import QVideoWidget
+from PyQt5.QtCore import QUrl, QTimer, Qt
+
+class VideoGridApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Video Grid Player")
+        self.setGeometry(0, 0, 1920, 1080)
+        self.setWindowState(Qt.WindowFullScreen)
+
+        # Dictionary to store playback positions for each video
+        self.video_positions = {}
+
+        # Central widget and grid layout
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+        layout = QGridLayout(central_widget)
+
+        # Sample videos dictionary (replace with your own video paths)
+        videos = {
+            "Fruit": "fruit.mp4",
+            "Baby Shark": r"C:\Users\pjhudgins\OneDrive\Documents\programming\stem\video_grid\babyshark.mp4",
+            "Sesame Street": "sesame.mp4",
+            # Add more videos as needed
+        }
+
+        # Add video title buttons to the grid layout
+        row, col = 0, 0
+        for title, path in videos.items():
+            button = QPushButton(title)
+            button.clicked.connect(lambda checked, p=path: self.play_video(p))
+            layout.addWidget(button, row, col)
+            col += 1
+            if col >= 3:  # Adjust for the number of columns you want
+                col = 0
+                row += 1
+
+    def play_video(self, video_path):
+        # Set up the video player and video widget
+        video_widget = QVideoWidget()
+        player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+        player.setVideoOutput(video_widget)
+        video_widget.setGeometry(100, 100, 800, 600)  # Adjust size and position as needed
+        video_widget.show()
+
+        # Load the video and resume from saved position if available
+        player.setMedia(QMediaContent(QUrl.fromLocalFile(video_path)))
+        if video_path in self.video_positions:
+            player.setPosition(self.video_positions[video_path])
+
+        player.play()
+
+        # Set up a timer to stop the video after 10 seconds
+        timer = QTimer(self)
+        timer.timeout.connect(lambda: self.stop_video(player, video_widget, video_path))
+        timer.setSingleShot(True)
+        timer.start(10000)  # 10 seconds in milliseconds
+
+    def stop_video(self, player, video_widget, video_path):
+        # Save the current playback position and stop the video
+        self.video_positions[video_path] = player.position()
+        player.stop()
+        video_widget.close()
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = VideoGridApp()
+    window.show()
+    sys.exit(app.exec_())
